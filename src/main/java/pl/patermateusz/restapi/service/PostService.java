@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pl.patermateusz.restapi.model.Comment;
 import pl.patermateusz.restapi.model.Post;
 import pl.patermateusz.restapi.repository.CommentRepository;
@@ -24,10 +25,6 @@ public class PostService {
         return postRepository.findAllPosts(PageRequest.of(page, SIZE, Sort.by(sort, "id")));
     }
 
-    public Post getSinglePost(long id) {
-        return postRepository.findById(id).orElseThrow();
-    }
-
     public List<Post> getPostsWithComments(int page, Sort.Direction sort) {
         List<Post> Posts = postRepository.findAllPosts(PageRequest.of(page, SIZE, Sort.by(sort, "id")));
         List<Long> ids = Posts.stream()
@@ -38,9 +35,29 @@ public class PostService {
         return Posts;
     }
 
+    public Post getSinglePost(long id) {
+        return postRepository.findById(id).orElseThrow();
+    }
+
     private List<Comment> extractComments(long id, List<Comment> comments) {
         return comments.stream()
                 .filter(comment -> comment.getPostId() == id)
                 .collect(Collectors.toList());
+    }
+
+    public Post addPost(Post post) {
+        return postRepository.save(post);
+    }
+
+    @Transactional
+    public Post editPost(Post post) {
+        Post postEdited = postRepository.findById(post.getId()).orElseThrow();
+        postEdited.setTitle(post.getTitle());
+        postEdited.setContent(post.getContent());
+        return postEdited;
+    }
+
+    public void deletePost(long id) {
+        postRepository.deleteById(id);
     }
 }
